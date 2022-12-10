@@ -1,0 +1,5 @@
+numpy
+opencv-python
+pykinect2
+pygame
+comtypes
