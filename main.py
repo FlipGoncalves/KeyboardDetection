@@ -11,7 +11,6 @@ import json
 ##### global variables go here
 # video capture
 capture = cv2.VideoCapture(0) ##### missing kinect
-desvio_centroids = 10
 
 try:
     with open("limits.json") as f:
@@ -45,20 +44,20 @@ def processImage(ranges, image):
 
 
 def findCentroid(img_processed):
-    connectivity = 4  
+    connectivity = 4
     centroids = None
 
     # Perform the operation
     _, _, _, centroids = cv2.connectedComponentsWithStats(cv2.cvtColor(img_processed, cv2.COLOR_BGR2GRAY), connectivity, cv2.CV_32S)
 
     for center in centroids:
-        cv2.circle(img_processed, (int(center[0]), int(center[1])), 1, (255,0,0), -1)
+        cv2.circle(img_processed, (int(center[0]), int(center[1])), 1, (0,0,255), -1)
 
     # print(len(centroids))
     # if (len(centroids) - 100) > desvio_centroids:
     #     print("hmm")
     
-    # return centroids
+    return centroids
 
 
 """ Main function """
@@ -77,8 +76,14 @@ def main():
         # binary threshold image
         img_processed = processImage(data["limits"], frame)
 
+        # noise removal
+
+
         # find centroids
-        findCentroid(img_processed)
+        centroids = findCentroid(img_processed)
+
+        # trim centroids
+        
 
         # show the final image after processing, noise removal and find the centroids
         cv2.imshow('Processed Image', img_processed)

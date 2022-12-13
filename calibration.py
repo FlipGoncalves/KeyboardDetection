@@ -5,7 +5,6 @@
 
 import numpy as np
 import cv2
-import freenect as fn
 
 ##### global variables go here
 # chessboard size
@@ -24,12 +23,6 @@ calibrated = False
 count = 1
 # the number of frames we would like to get to calibrate the camera
 num_calibration = 10
-
-""" Get RGB frame from kinect """
-def getFrameKinect():
-    frame, _ = fn.sync_get_video()
-    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-
 
 """ Calibration with Chessboard Detection """
 def FindAndDisplayChessboard(img):
@@ -54,9 +47,7 @@ def main():
     while True:
 
         # get the frame from normal camera
-        # ret, frame = capture.read()
-        
-        frame = getFrameKinect()
+        ret, frame = capture.read()
 
         # show the image
         cv2.imshow('video', frame)
