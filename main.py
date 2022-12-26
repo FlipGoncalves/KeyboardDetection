@@ -9,10 +9,6 @@ import copy
 import json
 from functools import partial
 
-##### global variables go here
-# video capture
-capture = cv2.VideoCapture(0) ##### missing kinect
-
 try:
     with open("limits.json") as f:
         data = json.load(f)
@@ -61,7 +57,7 @@ def findCentroid(img_processed):
     objects = []
     for label in max_labels:
         # whole space -> we dont care
-        if label[0] <= 1 or label[1] < 500:
+        if label[0] <= 1 or label[1] < 10:
             continue
 
         # draw the bounding rectangele around each object
@@ -85,7 +81,7 @@ control_pressed = False
 caps_pressed = False
 
 """ Transforms the pixels pressed with the left button of the mouse into real keyboard keys """
-def mouse_handler(event, x, y, flags, params, keyboard):
+def mouse_handler(event, x, y, flags, params, keyboard, centroids):
     global shift_pressed, control_pressed, caps_pressed
 
     if event == cv2.EVENT_LBUTTONDOWN:
@@ -94,43 +90,49 @@ def mouse_handler(event, x, y, flags, params, keyboard):
         # letter = input(f"What should i save ({x}, {y}) as? ")
         # keyboard[letter] = (x,y)
 
-        for key, label in keyboard.items():
+        for label in centroids:
             if x > label[2][0][0] and y > label[2][0][1]:
                 if x < label[2][1][0] and y < label[2][1][1]:
-                    if key == "space":
-                        print(" ")
-                    elif "shift" in key:
-                        # dunno what to do here
-                        shift_pressed = not shift_pressed
-                        print("Shift button pressed")
-                    elif "control" in key:
-                        # dunno what to do here
-                        control_pressed = not control_pressed
-                        print("Control button pressed")
-                    elif "alt" in key:
-                        # dunno what to do here
-                        print("Alt button pressed")
-                    elif key == "caps":
-                        caps_pressed = not caps_pressed
-                        print("Caps Lock button pressed")
-                    elif key == "escape":
-                        # dunno what to do here
-                        print("Escape button pressed")
-                        exit(1)
-                    elif key == "Power":
-                        # dunno what to do here
-                        print("Power button pressed")
-                    elif key == "backspace":
-                        # dunno what to do here
-                        print("Backspace button pressed")
-                    elif key == "enter":
-                        # dunno what to do here
-                        print("Enter button pressed")
-                    elif key == "tab":
-                        # dunno what to do here
-                        print("Tab button pressed")
-                    else:
-                        print(key.upper() if caps_pressed else key)
+                    print("Keyboard press")
+
+
+            # if x > label[2][0][0] and y > label[2][0][1]:
+            #     if x < label[2][1][0] and y < label[2][1][1]:
+            #         if key == "space":
+            #             print(" ")
+            #         elif "shift" in key:
+            #             # dunno what to do here
+            #             shift_pressed = not shift_pressed
+            #             print("Shift button pressed")
+            #         elif "control" in key:
+            #             # dunno what to do here
+            #             control_pressed = not control_pressed
+            #             print("Control button pressed")
+            #         elif "alt" in key:
+            #             # dunno what to do here
+            #             print("Alt button pressed")
+            #         elif key == "caps":
+            #             caps_pressed = not caps_pressed
+            #             print("Caps Lock button pressed")
+            #         elif key == "escape":
+            #             # dunno what to do here
+            #             print("Escape button pressed")
+            #             exit(1)
+            #         elif key == "Power":
+            #             # dunno what to do here
+            #             print("Power button pressed")
+            #         elif key == "backspace":
+            #             # dunno what to do here
+            #             print("Backspace button pressed")
+            #         elif key == "enter":
+            #             # dunno what to do here
+            #             print("Enter button pressed")
+            #         elif key == "tab":
+            #             # dunno what to do here
+            #             print("Tab button pressed")
+            #         else:
+            #             print(key.upper() if caps_pressed else key)
+
 
 """ Turns the keyboard values, calibrated before, into actual labels """
 def keyboardValues(centroids):
@@ -145,24 +147,26 @@ def keyboardValues(centroids):
     return real_keyboard
 
 
+##### global variables go here
+# video capture
+capture = cv2.VideoCapture('VideoColor.avi')
+
 """ Main function """
 def main():
 
     centroids = []
     lock = False
 
-    frame = cv2.imread("keyboard.jpg")
+    # frame = cv2.imread("keyboard.jpg")
 
     cv2.namedWindow("Processed Image")
 
     while True:
-        # ret, frame = capture.read()
-
-        # cv2.imshow('video', frame)
+        ret, frame = capture.read()
 
         k = cv2.waitKey(1)
 
-        if k == ord("q"): 
+        if k == ord("q") or frame is None: 
             break
 
         # binary threshold image
@@ -175,7 +179,7 @@ def main():
         keyboard = keyboardValues(centroids)
 
         # set callback with real keyboard values
-        cv2.setMouseCallback("Processed Image", partial(mouse_handler, keyboard=keyboard))
+        cv2.setMouseCallback("Processed Image", partial(mouse_handler, keyboard=keyboard, centroids=centroids))
 
         if k != -1:
             lock = not lock

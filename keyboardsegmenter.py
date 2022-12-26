@@ -41,7 +41,7 @@ def onTrackbar(value, channel, min_max, ranges):
 def main():
 
     # start video capture
-    capture = cv2.VideoCapture(0)
+    capture = cv2.VideoCapture('VideoColor.avi')
 
     # windows
     window_name_seg = 'Segmented'
@@ -62,11 +62,14 @@ def main():
     cv2.createTrackbar('Bmin', window_name_seg, ranges["B"]["min"], 255, partial(onTrackbar, channel='B', min_max='min', ranges=ranges))
     cv2.createTrackbar('Bmax', window_name_seg, ranges["B"]["max"], 255, partial(onTrackbar, channel='B', min_max='max', ranges=ranges))
 
+    # get frame
+    ret, image = capture.read()
+
     # while user wants video capture
     while True:
 
         # get frame
-        ret, image = capture.read()
+        # ret, image = capture.read()
 
         # get key
         k = cv2.waitKey(1)
