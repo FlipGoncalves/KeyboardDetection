@@ -157,11 +157,10 @@ def main():
     centroids = []
     lock = False
 
-    # frame = cv2.imread("keyboard.jpg")
-
     cv2.namedWindow("Processed Image")
 
     while True:
+
         ret, frame = capture.read()
 
         k = cv2.waitKey(1)
@@ -187,8 +186,6 @@ def main():
         if not lock:
             # show the final image after processing, noise removal and find the centroids
             cv2.imshow('Processed Image', img_processed)
-
-    # cv2.waitKey(-1)
 
 if __name__ == "__main__":
     main()
