@@ -61,7 +61,7 @@ def findCentroid(img_processed):
             continue
 
         # draw the bounding rectangele around each object
-        cv2.rectangle(img_processed, label[2][0], label[2][1], (0,255,0), 2)
+        # cv2.rectangle(img_processed, label[2][0], label[2][1], (0,255,0), 2)
         objects.append(label)
 
     if len(objects) > 1:
@@ -69,10 +69,10 @@ def findCentroid(img_processed):
         # biggest is the special keys: ESC and F1-11
         cv2.rectangle(img_processed, objects[0][2][0], objects[0][2][1], (255,0,0), 2)
 
-        # second biggest is the space bar
-        cv2.rectangle(img_processed, objects[1][2][0], objects[1][2][1], (0,0,255), 2)
+        # # second biggest is the space bar
+        # cv2.rectangle(img_processed, objects[1][2][0], objects[1][2][1], (0,0,255), 2)
 
-    return objects
+    return objects[0]
 
 
 keyboard = json.load(open("keyboard.json"))
@@ -159,33 +159,54 @@ def main():
 
     cv2.namedWindow("Processed Image")
 
+    # get information for the keyboard and save it
+    ret, frame = capture.read()
+
+    height,width,depth = frame.shape
+
+    mask = np.zeros(frame.shape[:2],np.uint8)
+    mask[int(height/3):int(height/3)+int(height/3),int(width/3):int(width/3)+int(width/3)] = 255
+    frame = cv2.bitwise_and(frame,frame,mask = mask)
+
+    # binary threshold image
+    img_processed = processImage(data["limits"], frame)
+
+    # find and trim centroids
+    keyboard_rect = findCentroid(img_processed)
+
+    # # set keyboard values to squares
+    # keyboard_values = keyboardValues(keyboard)
+
+    cv2.imshow("Keyboard processed", img_processed)
+
+    print("Press any key to start")
+    cv2.waitKey(-1)
+
+    cv2.destroyWindow("Keyboard processed")
+
     while True:
 
-        ret, frame = capture.read()
+        ret, frame = capture.read(0)
 
-        k = cv2.waitKey(1)
+        k = cv2.waitKey(32)
 
         if k == ord("q") or frame is None: 
             break
 
-        # binary threshold image
-        img_processed = processImage(data["limits"], frame)
+        # identify if hand touches the keyboard
+        # if yes then print touched keyboard
 
-        # find and trim centroids
-        centroids = findCentroid(img_processed)
+        
 
-        # set keyboard values to squares
-        keyboard = keyboardValues(centroids)
-
-        # set callback with real keyboard values
-        cv2.setMouseCallback("Processed Image", partial(mouse_handler, keyboard=keyboard, centroids=centroids))
+        # # set callback with real keyboard values
+        # cv2.setMouseCallback("Processed Image", partial(mouse_handler, keyboard=keyboard_values, centroids=keyboard_rect))
 
         if k != -1:
             lock = not lock
         
         if not lock:
             # show the final image after processing, noise removal and find the centroids
-            cv2.imshow('Processed Image', img_processed)
+            cv2.imshow('Processed Image', frame)
 
 if __name__ == "__main__":
     main()

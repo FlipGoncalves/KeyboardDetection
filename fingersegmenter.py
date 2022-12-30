@@ -1,4 +1,4 @@
-# Keyboard Segmentation
+# Finger Segmentation
 #
 # Filipe Gonçalves - 98083
 # Paulo Pereira - 98430
@@ -65,17 +65,8 @@ def main():
     # get frame
     ret, image = capture.read()
 
-    height,width,depth = image.shape
-
-    mask = np.zeros(image.shape[:2],np.uint8)
-    mask[int(height/3):int(height/3)+int(height/3),int(width/3):int(width/3)+int(width/3)] = 255
-    image = cv2.bitwise_and(image,image,mask = mask)
-
     # while user wants video capture
     while True:
-
-        # get frame
-        # ret, image = capture.read()
 
         # get key
         k = cv2.waitKey(1)
@@ -97,7 +88,7 @@ def main():
 
         # writes range limits to file
         if k == ord("w"):
-            file_name = 'limits.json'
+            file_name = 'limitsfinger.json'
             with open(file_name, 'w') as file_handle:
                 print('writing color limits to file ' + Style.BRIGHT + Fore.GREEN + file_name + Style.RESET_ALL)
                 json.dump({"limits": ranges}, file_handle)
