@@ -65,6 +65,12 @@ def main():
     # get frame
     ret, image = capture.read()
 
+    height,width,depth = image.shape
+
+    mask = np.zeros(image.shape[:2],np.uint8)
+    mask[int(height/3):int(height/3)+int(height/3),int(width/3):int(width/3)+int(width/3)] = 255
+    image = cv2.bitwise_and(image,image,mask = mask)
+
     # while user wants video capture
     while True:
 
