@@ -37,8 +37,10 @@ def condition(point):
         return True
     else :return False
 
-def touch_confirm(point):
-    if point[2]>1.16 and point[2]<1.17:
+def touch_confirm(point,mean):
+    #acho q os pontos certos são menos q media confirma
+    variance=0.02
+    if point[2]<mean-variance:
         return True
     else: return False
 
@@ -100,14 +102,14 @@ def main():
                 final_cloud = mesh_1.sample_points_uniformly(number_of_samples)        
 
                 o3d.visualization.draw_geometries_with_vertex_selection([final_cloud])
-                final_points = [point for point in final_cloud.points if touch_confirm(point)]
                 mean, cov= final_cloud.compute_mean_and_covariance()
+                final_points = [point for point in final_cloud.points if touch_confirm(point,mean)]
                 print(mean)
                 if len(final_points) !=0:
                     print("Key pressd")
                 #observe big
                 #o3d.visualization.draw_geometries_with_vertex_selection([mesh_1])
-        
+
 
 
 
