@@ -1,20 +1,27 @@
-# Main file
+#### Main file
 #
-# Filipe Gonçalves - 98083
-# Paulo Pereira - 98430
+## Filipe Gonçalves - 98083
+## Paulo Pereira - 98430
 
+
+# imports
 import numpy as np
 import cv2
 import copy
 import json
 from functools import partial
+import pcd
 
+# range for keyboard segmentation
 try:
     with open("limits.json") as f:
         data = json.load(f)
 except:
     print(f"Error opening file, exiting...")
     exit(1)
+
+# video capture
+capture = cv2.VideoCapture('VideoColor.avi')
 
 
 """ Applies binary threshould operation according to given ranges """
@@ -38,7 +45,7 @@ def processImage(ranges, image):
     return image_processed
 
 
-""" Main function """
+""" Keyboard centroid detection """
 def findCentroid(img_processed):
     connectivity = 4
 
@@ -75,89 +82,12 @@ def findCentroid(img_processed):
     return objects[0]
 
 
-keyboard = json.load(open("keyboard.json"))
-shift_pressed = False
-control_pressed = False
-caps_pressed = False
-
-""" Transforms the pixels pressed with the left button of the mouse into real keyboard keys """
-def mouse_handler(event, x, y, flags, params, keyboard, centroids):
-    global shift_pressed, control_pressed, caps_pressed
-
-    if event == cv2.EVENT_LBUTTONDOWN:
-        # # for the handle keyboard function
-        # print(x, y)
-        # letter = input(f"What should i save ({x}, {y}) as? ")
-        # keyboard[letter] = (x,y)
-
-        for label in centroids:
-            if x > label[2][0][0] and y > label[2][0][1]:
-                if x < label[2][1][0] and y < label[2][1][1]:
-                    print("Keyboard press")
-
-
-            # if x > label[2][0][0] and y > label[2][0][1]:
-            #     if x < label[2][1][0] and y < label[2][1][1]:
-            #         if key == "space":
-            #             print(" ")
-            #         elif "shift" in key:
-            #             # dunno what to do here
-            #             shift_pressed = not shift_pressed
-            #             print("Shift button pressed")
-            #         elif "control" in key:
-            #             # dunno what to do here
-            #             control_pressed = not control_pressed
-            #             print("Control button pressed")
-            #         elif "alt" in key:
-            #             # dunno what to do here
-            #             print("Alt button pressed")
-            #         elif key == "caps":
-            #             caps_pressed = not caps_pressed
-            #             print("Caps Lock button pressed")
-            #         elif key == "escape":
-            #             # dunno what to do here
-            #             print("Escape button pressed")
-            #             exit(1)
-            #         elif key == "Power":
-            #             # dunno what to do here
-            #             print("Power button pressed")
-            #         elif key == "backspace":
-            #             # dunno what to do here
-            #             print("Backspace button pressed")
-            #         elif key == "enter":
-            #             # dunno what to do here
-            #             print("Enter button pressed")
-            #         elif key == "tab":
-            #             # dunno what to do here
-            #             print("Tab button pressed")
-            #         else:
-            #             print(key.upper() if caps_pressed else key)
-
-
-""" Turns the keyboard values, calibrated before, into actual labels """
-def keyboardValues(centroids):
-    real_keyboard = {}
-    for key, value in keyboard.items():
-        (x,y) = eval(value)
-        for label in centroids:
-            if x > label[2][0][0] and y > label[2][0][1]:
-                if x < label[2][1][0] and y < label[2][1][1]:
-                    real_keyboard[key] = label
-
-    return real_keyboard
-
-
-##### global variables go here
-# video capture
-capture = cv2.VideoCapture('VideoColor.avi')
-
 """ Main function """
 def main():
 
-    centroids = []
     lock = False
 
-    cv2.namedWindow("Processed Image")
+    cv2.namedWindow("Image")
 
     # get information for the keyboard and save it
     ret, frame = capture.read()
@@ -173,6 +103,7 @@ def main():
 
     # find and trim centroids
     keyboard_rect = findCentroid(img_processed)
+    print(keyboard_rect)
 
     # # set keyboard values to squares
     # keyboard_values = keyboardValues(keyboard)
@@ -184,29 +115,61 @@ def main():
 
     cv2.destroyWindow("Keyboard processed")
 
+    # pcd variables
+    base_num_points = 0
+    key_pressed = False
+    key_pressed_started = 0
+    frame_number = 1
+
+    print("Starting....\n\n")
+
     while True:
 
-        ret, frame = capture.read(0)
+        # get frame from the video
+        ret, frame = capture.read()
 
-        k = cv2.waitKey(32)
+        # wait for possible voluntary code break
+        k = cv2.waitKey(1)
 
         if k == ord("q") or frame is None: 
             break
 
-        # identify if hand touches the keyboard
-        # if yes then print touched keyboard
+        # identify if hand touches the base board
+        base_num_points, keyboard_pressed = pcd.get_keypress(base_num_points, key_pressed, key_pressed_started, frame_number)
 
+        # if the keyboard is not in the process of being pressed, but it should
+        if keyboard_pressed and not key_pressed:
+            key_pressed_started = frame_number
+            key_pressed = True
         
+        # finishing key press - in average it takes 20 frames, as it is less than a second (30fps)
+        if key_pressed and frame_number > key_pressed_started + 20:
+            key_pressed = False
 
-        # # set callback with real keyboard values
-        # cv2.setMouseCallback("Processed Image", partial(mouse_handler, keyboard=keyboard_values, centroids=keyboard_rect))
+        # pressing key - in average it takes a little less than half the time of a key press, as there is always a little time of preassure
+        if key_pressed and frame_number == key_pressed_started + 8:
+            # identify if the pressure is in the same spot as the keyboard
+
+            # binary threshold image
+            img_processed = processImage(data["limits"], frame)
+            # find and trim centroids
+            centroid = findCentroid(img_processed)
+
+            # if the frame centroid is not only different but much bigger than the keyboard centroid, than the hand is in front of the keyboard
+            # hand in front of the keyboard + hand in the base board of the keyboard => key press !!
+            if centroid[1] > 3 * keyboard_rect[1]:
+                print("Key pressed !!!")
 
         if k != -1:
             lock = not lock
         
         if not lock:
             # show the final image after processing, noise removal and find the centroids
-            cv2.imshow('Processed Image', frame)
+            cv2.imshow('Image', frame)
+
+        # frame number
+        frame_number += 1
+
 
 if __name__ == "__main__":
     main()
