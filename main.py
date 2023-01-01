@@ -92,8 +92,10 @@ def main():
     # get information for the keyboard and save it
     ret, frame = capture.read()
 
+    # frames shape
     height,width,depth = frame.shape
 
+    # mask to get only the middle rectangle with the keyboard
     mask = np.zeros(frame.shape[:2],np.uint8)
     mask[int(height/3):int(height/3)+int(height/3),int(width/3):int(width/3)+int(width/3)] = 255
     frame = cv2.bitwise_and(frame,frame,mask = mask)
@@ -103,7 +105,6 @@ def main():
 
     # find and trim centroids
     keyboard_rect = findCentroid(img_processed)
-    print(keyboard_rect)
 
     # # set keyboard values to squares
     # keyboard_values = keyboardValues(keyboard)
@@ -135,7 +136,7 @@ def main():
             break
 
         # identify if hand touches the base board
-        base_num_points, keyboard_pressed = pcd.get_keypress(base_num_points, key_pressed, key_pressed_started, frame_number)
+        base_num_points, keyboard_pressed = pcd.get_keypress(base_num_points, frame_number)
 
         # if the keyboard is not in the process of being pressed, but it should
         if keyboard_pressed and not key_pressed:
@@ -150,14 +151,19 @@ def main():
         if key_pressed and frame_number == key_pressed_started + 8:
             # identify if the pressure is in the same spot as the keyboard
 
+            # mask to get only the middle rectangle with the keyboard
+            mask = np.zeros(frame.shape[:2],np.uint8)
+            mask[int(height/3):int(height/3)+int(height/3),int(width/3):int(width/3)+int(width/3)] = 255
+            frame = cv2.bitwise_and(frame,frame,mask = mask)        
+
             # binary threshold image
             img_processed = processImage(data["limits"], frame)
             # find and trim centroids
             centroid = findCentroid(img_processed)
 
-            # if the frame centroid is not only different but much bigger than the keyboard centroid, than the hand is in front of the keyboard
+            # if the frame centroid is different than the keyboard centroid, then the hand is in front of the keyboard
             # hand in front of the keyboard + hand in the base board of the keyboard => key press !!
-            if centroid[1] > 3 * keyboard_rect[1]:
+            if centroid[2][0] != keyboard_rect[2][0] or centroid[2][1] != keyboard_rect[2][1]:
                 print("Key pressed !!!")
 
         if k != -1:

@@ -26,7 +26,7 @@ def condition(point, moda):
 
 
 """ Function to assert if the base board has been pressed or not """
-def get_keypress(base_num_points, key_pressed, key_pressed_started, frame_num):
+def get_keypress(base_num_points, frame_num):
 
     # Load the point cloud
     pcd = o3d.io.read_point_cloud(f'./pointclouds/object3d{frame_num+1}.pcd',  remove_nan_points=True)
@@ -65,6 +65,7 @@ def get_keypress(base_num_points, key_pressed, key_pressed_started, frame_num):
 
         # if there are a lot of points, then it means there has been a key press
         if dict[1] >= 10:
+            # o3d.visualization.draw_geometries_with_vertex_selection([base_points])
             return base_num_points, True
         
     return base_num_points, False 
