@@ -154,10 +154,10 @@ def main():
             # mask to get only the middle rectangle with the keyboard
             mask = np.zeros(frame.shape[:2],np.uint8)
             mask[int(height/3):int(height/3)+int(height/3),int(width/3):int(width/3)+int(width/3)] = 255
-            frame = cv2.bitwise_and(frame,frame,mask = mask)        
+            frame_ = cv2.bitwise_and(frame,frame,mask = mask)        
 
             # binary threshold image
-            img_processed = processImage(data["limits"], frame)
+            img_processed = processImage(data["limits"], frame_)
             # find and trim centroids
             centroid = findCentroid(img_processed)
 
